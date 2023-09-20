@@ -1,54 +1,50 @@
-from __future__ import annotations
-
+import json
 from typing import Union
+import regex
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.output_parsers.json import parse_json_markdown
-from langchain.schema import AgentAction, AgentFinish, OutputParserException
+from langchain.schema import AgentAction, AgentFinish
 
 
-# Define a class that parses output for conversational agents
 class ConvoOutputParser(AgentOutputParser):
-    """Output parser for the conversational agent."""
-
     def get_format_instructions(self) -> str:
-        """Returns formatting instructions for the given output parser."""
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        """Attempts to parse the given text into an AgentAction or AgentFinish.
+        cleaned_output = text.strip()
+        my = cleaned_output
 
-        Raises:
-             OutputParserException if parsing fails.
-        """
-        try:
-            # Attempt to parse the text into a structured format (assumed to be JSON
-            # stored as markdown)
-            response = parse_json_markdown(text)
+        if text:
+            if "```json" in cleaned_output:
+                _, cleaned_output = cleaned_output.split("```json")
+            if "```" in cleaned_output:
+                cleaned_output, _ = cleaned_output.split("```")
+            if cleaned_output.startswith("```json"):
+                cleaned_output = cleaned_output[len("```json") :]
+            if cleaned_output.startswith("```"):
+                cleaned_output = cleaned_output[len("```") :]
+            if cleaned_output.endswith("```"):
+                cleaned_output = cleaned_output[: -len("```")]
+            if cleaned_output and text:
+                if not cleaned_output.endswith("""\n}"""):
+                    pattern = r"(\{(?:[^{}]|(?R))*\})"
+                    try:
+                        cleaned_output = regex.search(pattern, text).group(0)
+                    except:
+                        return AgentFinish({"output":my}, "")
+            cleaned_output = cleaned_output.strip()
 
-            # If the response contains an 'action' and 'action_input'
-            if "action" in response and "action_input" in response:
-                action, action_input = response["action"], response["action_input"]
-
-                # If the action indicates a final answer, return an AgentFinish
-                if action == "Final Answer":
-                    return AgentFinish({"output": action_input}, text)
-                else:
-                    # Otherwise, return an AgentAction with the specified action and
-                    # input
-                    return AgentAction(action, action_input, text)
+            if cleaned_output:
+                response = json.loads(cleaned_output)
+                action = response["action"]
+                try:
+                    action_input = response["action_input"]
+                except:
+                    action_input = ""
+            if action == "Final Answer":
+                return AgentFinish({"output": action_input}, text)
             else:
-                # If the necessary keys aren't present in the response, raise an
-                # exception
-                raise OutputParserException(
-                    f"Missing 'action' or 'action_input' in LLM output: {text}"
-                )
-        except Exception as e:
-            # If any other exception is raised during parsing, also raise an
-            # OutputParserException
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+                return AgentAction(action, action_input, text)
 
-    @property
-    def _type(self) -> str:
-        return "conversational_chat"
+        return AgentFinish({"output": ""}, "")
