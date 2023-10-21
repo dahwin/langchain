@@ -87,7 +87,7 @@ from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
-from langchain.llmas.together import Together
+from langchain.llms.together import Together
 __all__ = [
     "AI21",
     "AlephAlpha",
