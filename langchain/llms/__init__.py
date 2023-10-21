@@ -87,7 +87,7 @@ from langchain.llms.vertexai import VertexAI, VertexAIModelGarden
 from langchain.llms.vllm import VLLM, VLLMOpenAI
 from langchain.llms.writer import Writer
 from langchain.llms.xinference import Xinference
-
+from langchain.llmas.together import Together
 __all__ = [
     "AI21",
     "AlephAlpha",
@@ -162,6 +162,7 @@ __all__ = [
     "OctoAIEndpoint",
     "Xinference",
     "QianfanLLMEndpoint",
+    'Together',
 ]
 
 type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
@@ -231,4 +232,5 @@ type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
     "writer": Writer,
     "xinference": Xinference,
     "qianfan_endpoint": QianfanLLMEndpoint,
+    'Together':Together,
 }
